@@ -200,8 +200,14 @@ function stats(id){
  const ms=played(id).map(m=>view(m,id)),o={n:ms.length,w:0,l:0,sw:0,sl:0,ms,ps:[0,1,2].map(()=>({n:0,w:0,pf:0,d:0})),c:{w20:0,w21:0,l02:0,l12:0,comeW:0,lostAfter:0}};
  let cur=0,mw=0,ml=0;
  ms.forEach(v=>{v.win?(o.w++,cur=cur>0?cur+1:1):(o.l++,cur=cur<0?cur-1:-1);mw=Math.max(mw,cur);ml=Math.max(ml,-cur);
-  if(v.sets.length<2)return; /* en set do 15 (tekme za mesta) ne štejejo v statistiko setov */
-  v.sets.forEach((s,i)=>{const p=o.ps[i];p.n++;p.pf+=s[0];p.d+=s[0]-s[1];s[0]>s[1]?(p.w++,o.sw++):o.sl++});
+  v.sets.forEach((s,i)=>{
+  const p=o.ps[i];
+  p.n++;
+  p.pf+=s[0];
+  p.d+=s[0]-s[1];
+  s[0]>s[1]?(p.w++,o.sw++):o.sl++
+  });
+  if(v.sets.length<2)return;
   const k=v.sets.length,f=v.sets[0];
   if(v.win){k==2?o.c.w20++:o.c.w21++;if(f[0]<f[1])o.c.comeW++}else{k==2?o.c.l02++:o.c.l12++;if(f[0]>f[1])o.c.lostAfter++}});
  o.maxW=mw;o.maxL=ml;o.form=ms.slice(-5).map(v=>v.win);o.pct=pc(o.w,o.n);o.setPct=pc(o.sw,o.sw+o.sl);return o}
