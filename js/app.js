@@ -100,7 +100,7 @@ function groupTable(t, grp) {
   const any = rows.some(r => r.n);
   return `<div class="card flat"><div class="sec-h" style="margin-bottom:8px"><h2 style="font-size:16px">Skupina ${grp}</h2><span class="xs mut3">${any ? 'Zmage · razlika setov' : 'Tekme se še niso začele'}</span></div>
   <table class="tbl"><thead><tr><th></th><th>Par</th><th class="r hm">T</th><th class="r">Z</th><th class="r">P</th><th class="r">±S</th><th class="r hm">±T</th></tr></thead><tbody>
-  ${rows.map((r, i) => `<tr class="trow ${any && i < 2 ? 'top2' : ''} ${S.me === r.id ? 'me' : ''}" data-go="par/${esc(r.id)}"><td class="rk">${i + 1}</td><td class="gname">${esc(nm(r.id))}<small>${r.n ? `${r.n} ${pl(r.n, 'tekma', 'tekmi', 'tekme', 'tekem')}` : 'še brez tekem'}</small></td><td class="r hm">${r.n}</td><td class="r"><b>${r.w}</b></td><td class="r">${r.l}</td><td class="r" style="color:${eC(r.sd)}">${any ? sg(r.sd) : '–'}</td><td class="r mut hm">${any ? sg(r.pd) : '–'}</td></tr>`).join('')}
+  ${rows.map((r, i) => { const mv = (t.results[r.id] || {}).move, tag = mv === 'up' ? '<span class="mv up">▲ Napreduje</span>' : mv === 'down' ? '<span class="mv down">▼ Izpada</span>' : ''; return `<tr class="trow ${any && i < 2 ? 'top2' : ''} ${S.me === r.id ? 'me' : ''} ${mv === 'up' ? 'mup' : mv === 'down' ? 'mdown' : ''}" data-go="par/${esc(r.id)}"><td class="rk">${i + 1}</td><td class="gname">${esc(nm(r.id))}${tag}<small>${r.n ? `${r.n} ${pl(r.n, 'tekma', 'tekmi', 'tekme', 'tekem')}` : 'še brez tekem'}</small></td><td class="r hm">${r.n}</td><td class="r"><b>${r.w}</b></td><td class="r">${r.l}</td><td class="r" style="color:${eC(r.sd)}">${any ? sg(r.sd) : '–'}</td><td class="r mut hm">${any ? sg(r.pd) : '–'}</td></tr>`; }).join('')}
   </tbody></table></div>`;
 }
 
