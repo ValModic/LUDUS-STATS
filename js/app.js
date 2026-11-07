@@ -20,7 +20,7 @@ const IC = {
 const ic = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${IC[n]}</svg>`;
 
 /* ---------- stanje ---------- */
-const S = { me: store.get('ludus_me'), route: { v: 'home' }, day: null, filter: 'all', upd: null, fetched: null, err: null, loading: true, fl: { lg: '', op: '', res: '' }, ca: null, cb: null, eq: '', el: '' };
+const S = { lg: '', center: true, me: store.get('ludus_me'), route: { v: 'home' }, day: null, filter: 'all', upd: null, fetched: null, err: null, loading: true, fl: { lg: '', op: '', res: '' }, ca: null, cb: null, eq: '', el: '' };
 let charts = [];
 const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
@@ -128,22 +128,24 @@ function tournamentBlock(t, today) {
 
 /* ---------- pogled: domov ---------- */
 function vHome() {
-  const today = todayISO(), days = [...new Set(D.tournaments.map(t => t.date))].sort();
+  const today = todayISO(), T = D.tournaments.filter(t => !S.lg || parseInt(t.lg) === +S.lg), days = [...new Set(T.map(t => t.date))].sort();
   if (!S.day || !days.includes(S.day)) S.day = days.includes(today) ? today : (days.find(d => d > today) || days[days.length - 1]);
-  const day = S.day, isToday = day === today, ts = D.tournaments.filter(t => t.date === day);
+  const day = S.day, isToday = day === today, ts = T.filter(t => t.date === day);
   const ms = ts.flatMap(tourMatches), done = ms.filter(m => m.status === 'played').length;
   const total = ts.reduce((n, t) => n + progress(t).total, 0), left = total - done, diff = dayDiff(day, today);
   const when = isToday ? 'Danes' : diff > 0 ? (diff === 1 ? 'Jutri' : `Čez ${diff} ${pl(diff, 'dan', 'dneva', 'dni', 'dni')}`) : diff === -1 ? 'Včeraj' : `Pred ${-diff} ${pl(-diff, 'dnevom', 'dnevoma', 'dnevi', 'dnevi')}`;
   const strip = `<div class="days" role="tablist" aria-label="Turnirski dnevi">${days.map(d => {
-    const o = ld(d), n = D.tournaments.filter(t => t.date === d), all = n.flatMap(tourMatches), full = n.every(t => t.played);
+    const o = ld(d), n = T.filter(t => t.date === d), all = n.flatMap(tourMatches), full = n.every(t => t.played);
     return `<button class="day ${d === day ? 'on' : ''} ${d === today ? 'today' : ''}" data-day="${d}" role="tab" aria-selected="${d === day}"><small>${o.toLocaleDateString('sl-SI', { weekday: 'short' })}</small><b>${o.getDate()}. ${o.getMonth() + 1}.</b><em>${d === today ? 'danes' : full ? 'odigrano' : n.length + ' ' + pl(n.length, 'turnir', 'turnirja', 'turnirji', 'turnirjev')}</em></button>`;
   }).join('')}</div>`;
+  const lgs = [...new Set(D.tournaments.map(t => parseInt(t.lg)))].sort((a, b) => a - b);
+  const lgChips = `<div class="chips" style="margin-top:18px" role="group" aria-label="Liga"><button class="chip ${!S.lg ? 'on' : ''}" data-lg="">Vse lige</button>${lgs.map(l => `<button class="chip ${+S.lg === l ? 'on' : ''}" data-lg="${l}">${l}. liga</button>`).join('')}</div>`;
   const live = isToday && left > 0;
   let h = `<div class="hero"><span class="eyebrow"><span class="dot ${live ? '' : 'off'}"></span>${when}${live ? ' · turnir poteka' : ''}</span>
     <h1>${fdLong(day)}</h1>
     <p class="mut">${ts.length ? ts.map(t => esc(lgName(t.lg))).join(' · ') : 'Ta dan ni turnirja.'}</p>
     <div class="kpis"><div class="kpi"><b>${ts.length}</b><span>${pl(ts.length, 'turnir', 'turnirja', 'turnirji', 'turnirjev')}</span></div><div class="kpi ac"><b>${done}</b><span>odigranih tekem</span></div><div class="kpi"><b>${left}</b><span>preostalih tekem</span></div><div class="kpi"><b>${total ? Math.round(100 * done / total) : 0} %</b><span>napredek dneva</span></div></div>
-  </div>${strip}
+  </div>${lgChips}${strip}
   <div class="flt" style="margin-top:14px"><div class="chips" role="group" aria-label="Filter tekem">${[['all', 'Vse tekme'], ['played', 'Odigrane'], ['todo', 'Prihajajoče'], ['mine', '★ Moj par']].map(([k, l]) => `<button class="chip ${S.filter === k ? 'on' : ''}" data-filter="${k}">${l}</button>`).join('')}</div></div>`;
   h += ts.length ? ts.map(t => tournamentBlock(t, today)).join('') : empty('Ni turnirjev', 'Izberi drug dan v pregledu zgoraj.');
   return h;
@@ -251,7 +253,12 @@ function render() {
   if (!D) { app.innerHTML = S.loading ? '<div class="skel"></div><div class="skel"></div><div class="skel"></div>' : `<div class="view">${empty('Podatkov ni mogoče pridobiti', esc(S.err || '') + '<br><br><button class="btn pri" data-act="refresh">Poskusi znova</button>')}</div>`; return; }
   const err = S.err ? `<div class="banner" role="alert">⚠️ ${esc(S.err)}</div>` : '';
   const f = S.fetched ? `Podatki iz preglednic: ${new Date(S.fetched).toLocaleString('sl-SI', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })} · osvežitev vsakih ${CFG.REFRESH_MIN} min` : '';
+  const ds = $('.days'), dl = ds ? ds.scrollLeft : null, y = scrollY, keep = !S.anim;
   app.innerHTML = `<div class="view${S.anim ? ' anim' : ''}">${err}${({ home: vHome, pairs: vPairs, pair: vPair, compare: vCompare, elo: vElo })[S.route.v]()}<footer>${f}</footer></div>`;
+  const d2 = $('.days'), on = d2 && d2.querySelector('.day.on');
+  if (d2 && on) { if (dl != null && !S.center) d2.scrollLeft = dl; else d2.scrollLeft = on.getBoundingClientRect().left - d2.getBoundingClientRect().left + d2.scrollLeft - d2.clientWidth / 2 + on.offsetWidth / 2; }
+  if (d2) S.center = false;
+  if (keep) scrollTo(0, y);
   S.anim = false; after();
 }
 
@@ -274,8 +281,9 @@ function after() {
 
 /* ---------- dogodki ---------- */
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-go],[data-day],[data-filter],[data-act],[data-fav]'); if (!t) return;
-  if (t.dataset.go) go('/' + t.dataset.go);
+  const t = e.target.closest('[data-go],[data-day],[data-lg],[data-filter],[data-act],[data-fav]'); if (!t) return;
+  if (t.dataset.lg !== undefined) { S.lg = t.dataset.lg; S.center = true; render(); }
+  else if (t.dataset.go) go('/' + t.dataset.go);
   else if (t.dataset.day) { S.day = t.dataset.day; render(); }
   else if (t.dataset.filter) { S.filter = t.dataset.filter; render(); }
   else if (t.dataset.fav) { if (S.me === t.dataset.fav) { S.me = null; store.del('ludus_me'); } else { S.me = t.dataset.fav; store.set('ludus_me', S.me); } render(); }
