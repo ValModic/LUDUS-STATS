@@ -211,3 +211,10 @@ footer { margin-top: 40px; font-size: 12.5px; color: var(--tx3); text-align: cen
 }
 @media (max-width: 560px) { .hm { display: none; } .card { padding: 14px; } .tbl td { padding: 9px 6px; } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* napredovanje / izpad */
+.mv { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; font: 700 11px var(--font); vertical-align: 1px; white-space: nowrap; }
+.mv.up { background: color-mix(in srgb, var(--win) 18%, transparent); color: var(--win); }
+.mv.down { background: color-mix(in srgb, var(--lose) 18%, transparent); color: var(--lose); }
+.tbl tr.mup td:first-child { box-shadow: inset 3px 0 0 var(--win); }
+.tbl tr.mdown td:first-child { box-shadow: inset 3px 0 0 var(--lose); }
